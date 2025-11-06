@@ -4,14 +4,14 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\Pengguna;
+use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 
 class PenggunaController extends Controller
 {
     public function index()
     {
-        return Pengguna::all();
+        return User::all();
     }
 
     public function store(Request $request)
@@ -23,7 +23,7 @@ class PenggunaController extends Controller
             'role' => 'in:user,admin'
         ]);
 
-        $pengguna = Pengguna::create([
+        $pengguna = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
@@ -35,12 +35,12 @@ class PenggunaController extends Controller
 
     public function show($id)
     {
-        return Pengguna::findOrFail($id);
+        return User::findOrFail($id);
     }
 
     public function update(Request $request, $id)
     {
-        $pengguna = Pengguna::findOrFail($id);
+        $pengguna = User::findOrFail($id);
 
         $pengguna->update([
             'name' => $request->name ?? $pengguna->name,
@@ -54,7 +54,7 @@ class PenggunaController extends Controller
 
     public function destroy($id)
     {
-        $pengguna = Pengguna::findOrFail($id);
+        $pengguna = User::findOrFail($id);
         $pengguna->delete();
 
         return response()->json(null, 204);

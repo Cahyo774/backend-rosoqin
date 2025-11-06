@@ -11,12 +11,30 @@ return new class extends Migration
         Schema::create('produks', function (Blueprint $table) {
             $table->id();
             $table->string('title');
-            $table->text('description')->nullable();
-            $table->decimal('price', 10, 2);
-            $table->string('photo')->nullable(); // cukup string dulu
-            $table->enum('status', ['available','unavailable'])->default('available');
-            $table->foreignId('user_id')->constrained('penggunas')->onDelete('cascade');
+            $table->text('description');
+            $table->enum('category', [
+                'Kardus',
+                'Plastik',
+                'Kertas',
+                'Logam',
+                'Elektronik',
+                'Kaca',
+                'Tekstil',
+                'Lainnya'
+            ]);
+            $table->decimal('price', 10, 2)->default(0.00);
+            $table->string('photo')->nullable();
+            $table->string('address');
+            $table->decimal('latitude', 10, 8)->nullable();
+            $table->decimal('longitude', 11, 8)->nullable();
+            $table->enum('status', ['available', 'unavailable'])->default('available');
+            $table->foreignId('id_user')->constrained('users')->onDelete('cascade');
             $table->timestamps();
+
+            // Index untuk pencarian dan filter
+            $table->index('category');
+            $table->index('status');
+            $table->index('created_at');
         });
     }
 

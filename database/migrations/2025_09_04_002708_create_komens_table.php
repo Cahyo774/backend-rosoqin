@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('komens', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained('penggunas')->onDelete('cascade');
+            $table->foreignId('id_user')->constrained('users')->onDelete('cascade');
             $table->foreignId('product_id')->constrained('produks')->onDelete('cascade');
             $table->text('content');
             $table->string('sentiment')->nullable(); // positif / negatif / netral

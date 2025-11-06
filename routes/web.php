@@ -1,12 +1,12 @@
 <?php
 
 use App\Models\Komen;
-use App\Models\Pengguna;
+use App\Models\User;
 use App\Models\Produk;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/cekpengguna', function () {
-    return Pengguna::all();
+    return User::all();
 });
 Route::get('/cekkomen', function () {
     return Komen::all();

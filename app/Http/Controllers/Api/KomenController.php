@@ -51,4 +51,17 @@ class KomenController extends Controller
 
         return response()->json(null, 204);
     }
+
+    public function getByProduct($id)
+    {
+        $komens = Komen::where('product_id', $id)
+            ->with('user') // kalau ingin ambil data user juga
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json([
+            'data' => $komens
+        ]);
+    }
+
 }

@@ -18,7 +18,7 @@ class Komen extends Model
 
     public function pengguna()
     {
-        return $this->belongsTo(Pengguna::class, 'user_id');
+        return $this->belongsTo(User::class, 'user_id');
     }
 
     public function produk()
