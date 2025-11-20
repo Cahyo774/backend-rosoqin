@@ -15,6 +15,7 @@ class ProdukController extends Controller
 
         $produks->map(function ($produk) {
             $produk->photo_url = $produk->photo ? asset('storage/' . $produk->photo) : null;
+            $produk->user_id = $produk->id_user;
             return $produk;
         });
 
@@ -23,8 +24,14 @@ class ProdukController extends Controller
 
     public function show($id)
     {
+        // 🔥 Ambil produk + relasi user
         $produk = Produk::with('user')->findOrFail($id);
+
+        // 🔥 Tambahkan URL foto
         $produk->photo_url = $produk->photo ? asset('storage/' . $produk->photo) : null;
+        $produk->user_id = $produk->id_user;
+
+
         return response()->json($produk);
     }
 
@@ -49,6 +56,7 @@ class ProdukController extends Controller
         try {
             $path = $request->file('photo')->store('produk', 'public');
 
+            // 🔥 Simpan produk dengan id_user
             $produk = Produk::create([
                 'title'       => $request->title,
                 'description' => $request->description,
@@ -64,15 +72,18 @@ class ProdukController extends Controller
 
             $produk->load('user');
             $produk->photo_url = asset('storage/' . $produk->photo);
+            $produk->user_id = $produk->id_user;
+
 
             return response()->json([
                 'message' => 'Produk berhasil dibuat',
-                'data' => $produk
+                'data'    => $produk
             ], 201);
+
         } catch (\Exception $e) {
             return response()->json([
                 'message' => 'Gagal membuat produk',
-                'error' => $e->getMessage()
+                'error'   => $e->getMessage()
             ], 500);
         }
     }
@@ -81,6 +92,7 @@ class ProdukController extends Controller
     {
         $produk = Produk::findOrFail($id);
 
+        // 🔥 Hanya pemilik yang boleh edit
         if ($produk->id_user !== auth()->id()) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
@@ -98,8 +110,12 @@ class ProdukController extends Controller
         ]);
 
         try {
-            $data = $request->only(['title', 'description', 'category', 'address', 'latitude', 'longitude', 'price', 'status']);
+            $data = $request->only([
+                'title', 'description', 'category', 'address',
+                'latitude', 'longitude', 'price', 'status'
+            ]);
 
+            // 🔥 Ganti foto jika diupload baru
             if ($request->hasFile('photo')) {
                 if ($produk->photo && Storage::disk('public')->exists($produk->photo)) {
                     Storage::disk('public')->delete($produk->photo);
@@ -110,15 +126,18 @@ class ProdukController extends Controller
             $produk->update($data);
             $produk->load('user');
             $produk->photo_url = $produk->photo ? asset('storage/' . $produk->photo) : null;
+            $produk->user_id = $produk->id_user;
+
 
             return response()->json([
                 'message' => 'Produk berhasil diupdate',
-                'data' => $produk
+                'data'    => $produk
             ]);
+
         } catch (\Exception $e) {
             return response()->json([
                 'message' => 'Gagal mengupdate produk',
-                'error' => $e->getMessage()
+                'error'   => $e->getMessage()
             ], 500);
         }
     }
@@ -127,6 +146,7 @@ class ProdukController extends Controller
     {
         $produk = Produk::findOrFail($id);
 
+        // 🔥 Hanya pemilik boleh menghapus
         if ($produk->id_user !== auth()->id()) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
@@ -139,20 +159,23 @@ class ProdukController extends Controller
             $produk->delete();
 
             return response()->json(['message' => 'Produk berhasil dihapus']);
+
         } catch (\Exception $e) {
             return response()->json([
                 'message' => 'Gagal menghapus produk',
-                'error' => $e->getMessage()
+                'error'   => $e->getMessage()
             ], 500);
         }
     }
 
     public function myProducts()
     {
-        $produks = Produk::where('id_user', auth()->id())->get();
+        $produks = Produk::where('id_user', auth()->id())
+                         ->with('user')
+                         ->get();
 
         $produks->map(function ($produk) {
-            $produk->photo_url = $produk->photo ? asset('storage/' . $produk->photo) : null;
+            $produk->photo_url = asset('storage/' . $produk->photo);
             return $produk;
         });
 
