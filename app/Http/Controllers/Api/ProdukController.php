@@ -13,7 +13,7 @@ class ProdukController extends Controller
     {
         $produks = Produk::with('user')->get();
 
-        $produks->map(function($produk) {
+        $produks->map(function ($produk) {
             $produk->photo_url = $produk->photo ? asset('storage/' . $produk->photo) : null;
             return $produk;
         });
@@ -33,43 +33,26 @@ class ProdukController extends Controller
         $request->validate([
             'title'       => 'required|string|max:255',
             'description' => 'required|string',
-            'category'    => 'required|string|max:100', // ✅ UBAH: category_id -> category
-            'address'     => 'required|string|max:500', // ✅ UBAH: nullable -> required
-            'latitude'    => 'required|numeric|between:-90,90', // ✅ UBAH: nullable -> required
-            'longitude'   => 'required|numeric|between:-180,180', // ✅ UBAH: nullable -> required
+            'category'    => 'required|string|max:100',
+            'address'     => 'required|string|max:500',
+            'latitude'    => 'required|numeric|between:-90,90',
+            'longitude'   => 'required|numeric|between:-180,180',
             'price'       => 'nullable|numeric|min:0',
             'status'      => 'required|in:available,unavailable',
-            'photo'       => 'required|image|mimes:jpg,jpeg,png|max:2048', // ✅ UBAH: nullable -> required
+            'photo'       => 'required|image|mimes:jpg,jpeg,png|max:2048',
         ]);
 
+        if (!$request->hasFile('photo')) {
+            return response()->json(['message' => 'Foto produk wajib diunggah'], 422);
+        }
+
         try {
-            // Handle file upload
-            if (!$request->hasFile('photo')) {
-                return response()->json([
-                    'message' => 'Foto produk wajib diunggah'
-                ], 422);
-            }
-
             $path = $request->file('photo')->store('produk', 'public');
-
-            // Debug data sebelum create
-            logger('📝 DATA YANG AKAN DISIMPAN:', [
-                'title' => $request->title,
-                'description' => $request->description,
-                'category' => $request->category, // ✅ UBAH: category_id -> category
-                'address' => $request->address,
-                'latitude' => $request->latitude,
-                'longitude' => $request->longitude,
-                'price' => $request->price,
-                'status' => $request->status,
-                'photo' => $path,
-                'id_user' => auth()->id()
-            ]);
 
             $produk = Produk::create([
                 'title'       => $request->title,
                 'description' => $request->description,
-                'category'    => $request->category, // ✅ UBAH: category_id -> category
+                'category'    => $request->category,
                 'address'     => $request->address,
                 'latitude'    => $request->latitude,
                 'longitude'   => $request->longitude,
@@ -79,20 +62,14 @@ class ProdukController extends Controller
                 'id_user'     => auth()->id(),
             ]);
 
-            // Reload dengan relationship
             $produk->load('user');
             $produk->photo_url = asset('storage/' . $produk->photo);
-
-            logger('✅ PRODUK BERHASIL DIBUAT:', $produk->toArray());
 
             return response()->json([
                 'message' => 'Produk berhasil dibuat',
                 'data' => $produk
             ], 201);
-
         } catch (\Exception $e) {
-            logger('❌ ERROR CREATE PRODUK:', ['error' => $e->getMessage()]);
-
             return response()->json([
                 'message' => 'Gagal membuat produk',
                 'error' => $e->getMessage()
@@ -104,17 +81,14 @@ class ProdukController extends Controller
     {
         $produk = Produk::findOrFail($id);
 
-        // Authorization - hanya pemilik yang bisa update
         if ($produk->id_user !== auth()->id()) {
-            return response()->json([
-                'message' => 'Unauthorized - Anda bukan pemilik produk ini'
-            ], 403);
+            return response()->json(['message' => 'Unauthorized'], 403);
         }
 
         $request->validate([
             'title'       => 'sometimes|required|string|max:255',
             'description' => 'nullable|string',
-            'category'    => 'sometimes|required|string|max:100', // ✅ UBAH: category_id -> category
+            'category'    => 'sometimes|required|string|max:100',
             'address'     => 'sometimes|required|string|max:500',
             'latitude'    => 'sometimes|required|numeric|between:-90,90',
             'longitude'   => 'sometimes|required|numeric|between:-180,180',
@@ -124,10 +98,9 @@ class ProdukController extends Controller
         ]);
 
         try {
-            $data = $request->only(['title', 'description', 'category', 'address', 'latitude', 'longitude', 'price', 'status']); // ✅ UBAH: tambahkan category
+            $data = $request->only(['title', 'description', 'category', 'address', 'latitude', 'longitude', 'price', 'status']);
 
             if ($request->hasFile('photo')) {
-                // Hapus foto lama jika ada
                 if ($produk->photo && Storage::disk('public')->exists($produk->photo)) {
                     Storage::disk('public')->delete($produk->photo);
                 }
@@ -141,8 +114,7 @@ class ProdukController extends Controller
             return response()->json([
                 'message' => 'Produk berhasil diupdate',
                 'data' => $produk
-            ], 200);
-
+            ]);
         } catch (\Exception $e) {
             return response()->json([
                 'message' => 'Gagal mengupdate produk',
@@ -155,25 +127,18 @@ class ProdukController extends Controller
     {
         $produk = Produk::findOrFail($id);
 
-        // Authorization - hanya pemilik yang bisa hapus
         if ($produk->id_user !== auth()->id()) {
-            return response()->json([
-                'message' => 'Unauthorized - Anda bukan pemilik produk ini'
-            ], 403);
+            return response()->json(['message' => 'Unauthorized'], 403);
         }
 
         try {
-            // Hapus foto jika ada
             if ($produk->photo && Storage::disk('public')->exists($produk->photo)) {
                 Storage::disk('public')->delete($produk->photo);
             }
 
             $produk->delete();
 
-            return response()->json([
-                'message' => 'Produk berhasil dihapus'
-            ], 200);
-
+            return response()->json(['message' => 'Produk berhasil dihapus']);
         } catch (\Exception $e) {
             return response()->json([
                 'message' => 'Gagal menghapus produk',
@@ -182,18 +147,15 @@ class ProdukController extends Controller
         }
     }
 
-    // Method untuk mendapatkan produk milik user yang login
     public function myProducts()
     {
         $produks = Produk::where('id_user', auth()->id())->get();
 
-        $produks->map(function($produk) {
+        $produks->map(function ($produk) {
             $produk->photo_url = $produk->photo ? asset('storage/' . $produk->photo) : null;
             return $produk;
         });
 
-        return response()->json([
-            'data' => $produks
-        ]);
+        return response()->json(['data' => $produks]);
     }
 }

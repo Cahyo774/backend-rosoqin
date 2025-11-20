@@ -8,28 +8,35 @@ use Illuminate\Http\Request;
 
 class KomenController extends Controller
 {
-    // Ambil semua komen
     public function index()
     {
-        return response()->json(Komen::with(['pengguna', 'produk'])->get(), 200);
+        return response()->json(Komen::with(['user', 'produk'])->get(), 200);
     }
 
-    // Tambah komen baru
     public function store(Request $request)
     {
+        try {
         $request->validate([
-            'user_id'    => 'required|exists:penggunas,id',
+            'id_user' => 'required|exists:users,id',
             'product_id' => 'required|exists:produks,id',
-            'content'    => 'required|string',
-            'sentiment'  => 'nullable|string',
+            'content' => 'required|string',
         ]);
 
         $komen = Komen::create($request->all());
 
-        return response()->json($komen, 201);
+        return response()->json([
+            'message' => 'Komentar berhasil ditambahkan',
+            'data' => $komen
+        ], 201);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => $e->getMessage()
+            ], 500);
+        }
+
     }
 
-    // Update komen
     public function update(Request $request, $id)
     {
         $request->validate([
@@ -40,28 +47,27 @@ class KomenController extends Controller
         $komen = Komen::findOrFail($id);
         $komen->update($request->all());
 
-        return response()->json($komen, 200);
+        return response()->json([
+            'message' => 'Komentar berhasil diperbarui',
+            'data' => $komen
+        ], 200);
     }
 
-    // Hapus komen
     public function destroy($id)
     {
         $komen = Komen::findOrFail($id);
         $komen->delete();
 
-        return response()->json(null, 204);
+        return response()->json(['message' => 'Komentar berhasil dihapus'], 204);
     }
 
     public function getByProduct($id)
     {
         $komens = Komen::where('product_id', $id)
-            ->with('user') // kalau ingin ambil data user juga
+            ->with('user')
             ->orderBy('created_at', 'desc')
             ->get();
 
-        return response()->json([
-            'data' => $komens
-        ]);
+        return response()->json(['data' => $komens], 200);
     }
-
 }

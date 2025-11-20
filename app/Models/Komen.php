@@ -10,15 +10,15 @@ class Komen extends Model
     use HasFactory;
 
     protected $fillable = [
-        'user_id',
+        'id_user',
         'product_id',
         'content',
         'sentiment',
     ];
 
-    public function pengguna()
+    public function user()
     {
-        return $this->belongsTo(User::class, 'user_id');
+        return $this->belongsTo(User::class, 'id_user');
     }
 
     public function produk()
